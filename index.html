@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚽ FútbolConnect | El Club Digital</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --grass-green: #2ecc71;
+            --pitch-dark: #1a531a;
+            --ball-black: #1e1e1e;
+            --line-white: #ffffff;
+            --text-dark: #333333;
+            --error-card: #e74c3c;
+            --success-grass: #27ae60;
+            --border-grey: #ddd;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+
+        body {
+            background: var(--pitch-dark); color: var(--text-dark);
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; overflow: hidden; position: relative;
+        }
+
+        body::before {
+            content: ''; position: absolute; top: 50%; left: 50%; width: 150vw; height: 150vh;
+            transform: translate(-50%, -50%);
+            background-image:
+                linear-gradient(var(--line-white) 2px, transparent 2px),
+                linear-gradient(90deg, var(--line-white) 2px, transparent 2px),
+                radial-gradient(circle at center, transparent 30%, var(--pitch-dark) 31%, var(--pitch-dark) 40%, transparent 41%),
+                radial-gradient(circle at center, var(--line-white) 2px, transparent 3px);
+            background-size: 100px 100px, 100px 100px, 200px 200px, 200px 200px;
+            background-position: center; opacity: 0.1;
+            animation: pitchShift 60s infinite linear; z-index: -1;
+        }
+        @keyframes pitchShift { 0% { transform: translate(-50%, -50%) rotate(0deg); } 100% { transform: translate(-50%, -50%) rotate(360deg); } }
+
+        .card {
+            background: var(--line-white); padding: 1.8rem 2rem;
+            border-radius: 1rem; border: 4px solid var(--ball-black);
+            width: 100%; max-width: 400px; box-shadow: 0 15px 0 rgba(0,0,0,0.2);
+            max-height: 95vh; overflow-y: auto; position: relative;
+        }
+        .card::-webkit-scrollbar { display: none; }
+
+        h2 { text-align: center; font-family: 'Space Grotesk', sans-serif; font-size: 1.5rem; margin-bottom: 0.5rem; text-transform: uppercase; color: var(--ball-black); }
+        .subtitle { text-align: center; font-size: 0.8rem; color: #666; margin-bottom: 1.5rem; font-weight: 600;}
+
+        .input-group { margin-bottom: 0.6rem; position: relative; }
+        label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--ball-black); margin-bottom: 0.2rem; text-transform: uppercase;}
+
+        input {
+            width: 100%; padding: 0.7rem; background: #f9f9f9;
+            border: 2px solid var(--border-grey); border-radius: 0.4rem;
+            color: var(--text-dark); transition: 0.3s; font-size: 0.9rem; font-weight: 600;
+        }
+        input:focus { outline: none; border-color: var(--grass-green); background: #fff; }
+        input:disabled { background: #eee; opacity: 0.6; cursor: not-allowed; border-color: #ccc;}
+
+        /* Input para códigos de 6 dígitos */
+        .code-input { letter-spacing: 0.5rem; text-align: center; font-size: 1.2rem; font-family: monospace;}
+
+        .hint { font-size: 0.7rem; margin-top: 2px; font-weight: 600; min-height: 14px; }
+
+        button {
+            width: 100%; padding: 0.85rem; background: var(--grass-green);
+            color: white; border: none; border-radius: 0.5rem; font-weight: 800;
+            text-transform: uppercase; cursor: pointer; transition: 0.3s;
+            margin-top: 0.8rem; font-size: 0.95rem; box-shadow: 0 4px 0 var(--success-grass);
+        }
+        button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 0 var(--success-grass); }
+        button:active:not(:disabled) { transform: translateY(2px); box-shadow: 0 2px 0 var(--success-grass); }
+        button:disabled { background: #bdc3c7; color: #ecf0f1; cursor: not-allowed; box-shadow: 0 4px 0 #95a5a6;}
+
+        .btn-secondary {
+            background: transparent; color: var(--text-dark); box-shadow: none;
+            margin-top: 0.5rem; padding: 0.5rem; font-size: 0.8rem;
+            text-decoration: underline; text-transform: none; border: none;
+        }
+        .btn-secondary:hover:not(:disabled) { transform: none; box-shadow: none; color: var(--error-card); }
+
+        .footer { text-align: center; margin-top: 1rem; font-size: 0.8rem; font-weight: 600;}
+        .link { color: var(--success-grass); font-weight: 800; cursor: pointer; text-decoration: none; }
+
+        #alert { margin-top: 1rem; padding: 0.8rem; border-radius: 0.5rem; text-align: center; display: none; font-size: 0.85rem; font-weight: 700; text-transform: uppercase;}
+        .success-box { background: #d4edda; color: var(--success-grass); border: 2px solid var(--success-grass); }
+        .error-box { background: #f8d7da; color: var(--error-card); border: 2px solid var(--error-card); }
+
+        .hidden { display: none !important; }
+
+        .profile-box { background: #f9f9f9; padding: 1rem; border-radius: 0.8rem; margin-bottom: 1.2rem; border: 2px solid var(--border-grey); text-align: center;}
+        .profile-item { margin-bottom: 0.5rem; padding-bottom: 0.5rem; }
+        .profile-label { font-size: 0.65rem; color: var(--success-grass); text-transform: uppercase; font-weight: 800; }
+        .profile-value { font-size: 1rem; font-weight: 700; color: var(--ball-black);}
+        .team-logo-display { width: 80px; height: 80px; object-fit: contain; margin-bottom: 0.5rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1)); }
+
+        .search-bar { margin-bottom: 1rem; }
+        .teams-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        .teams-grid::-webkit-scrollbar { width: 6px; }
+        .teams-grid::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+        .team-card { border: 2px solid var(--border-grey); border-radius: 0.5rem; padding: 0.5rem; text-align: center; cursor: pointer; transition: 0.2s; background: #fff; }
+        .team-card:hover { border-color: var(--grass-green); transform: scale(1.05); }
+        .team-card.selected { border-color: var(--grass-green); background: #e8f8f5; box-shadow: 0 0 0 2px var(--grass-green); }
+        .team-card img { width: 45px; height: 45px; object-fit: contain; margin-bottom: 0.3rem;}
+        .team-card span { display: block; font-size: 0.65rem; font-weight: 700; color: var(--ball-black); line-height: 1.1;}
+
+        #glass-shield { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; cursor: wait; background: transparent; }
+    </style>
+</head>
+<body>
+
+<div id="glass-shield" class="hidden"></div>
+
+<div class="card">
+    <!-- 1. VISTA: LOGIN -->
+    <div id="view-login">
+        <h2>Salta a la Cancha</h2>
+        <div class="subtitle">Ingresa tus credenciales</div>
+        <div class="input-group">
+            <label>Usuario o Email</label>
+            <input type="text" id="l-user">
+        </div>
+        <div class="input-group">
+            <label>Contraseña</label>
+            <input type="password" id="l-pass" onkeypress="if(event.key==='Enter') auth('login')">
+        </div>
+        <div style="text-align: right; margin-bottom: 1rem;">
+            <a class="link" style="font-size: 0.75rem;" onclick="switchView('view-forgot-req')">¿Olvidaste tu contraseña?</a>
+        </div>
+        <button id="btn-login" type="button" onclick="auth('login')">Iniciar Partido</button>
+        <div class="footer">¿Eres nuevo fichaje? <a class="link" onclick="switchView('view-signup')">Únete al Club</a></div>
+    </div>
+
+    <!-- 2. VISTA: REGISTRO -->
+    <div id="view-signup" class="hidden">
+        <h2>Fichaje de Jugador</h2>
+        <div class="input-group">
+            <label>Correo de Contacto</label>
+            <input type="email" id="s-email" oninput="liveVerifyEmail(this.value)">
+            <div id="e-hint" class="hint"></div>
+        </div>
+        <div class="input-group">
+            <label>Alias Único</label>
+            <input type="text" id="s-user" oninput="liveVerify(this.value)">
+            <div id="s-hint" class="hint"></div>
+        </div>
+        <div class="input-group">
+            <label>Contraseña</label>
+            <input type="password" id="s-pass" disabled oninput="validatePasswordLive()" placeholder="Letras, números y símbolos">
+            <div id="pass-hint" class="hint"></div>
+        </div>
+        <div class="input-group">
+            <label>Confirmar Balón</label>
+            <input type="password" id="s-pass2" disabled oninput="validateMatchLive()">
+            <div id="match-hint" class="hint"></div>
+        </div>
+        <button id="btn-signup" type="button" onclick="auth('signup')" disabled>Firmar Contrato</button>
+        <div class="footer">¿Ya eres del equipo? <a class="link" onclick="switchView('view-login')">Logueate</a></div>
+    </div>
+
+    <!-- 3. VISTA: VERIFICAR CORREO (NUEVO) -->
+    <div id="view-verify" class="hidden">
+        <h2>Confirma tu Pase</h2>
+        <div class="subtitle">Hemos enviado un código de 6 dígitos a <br><b id="verify-email-display"></b></div>
+        <div class="input-group">
+            <label>Código de Verificación</label>
+            <input type="text" id="v-code" class="code-input" placeholder="000000" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+        <button id="btn-verify" type="button" onclick="verifyEmail()">Verificar Cuenta</button>
+        <button type="button" class="btn-secondary" onclick="switchView('view-login')">Volver al inicio</button>
+    </div>
+
+    <!-- 4. VISTA: PEDIR RECUPERACIÓN (NUEVO) -->
+    <div id="view-forgot-req" class="hidden">
+        <h2>Recuperar Pase</h2>
+        <div class="subtitle">Ingresa tu correo para recibir un código de recuperación.</div>
+        <div class="input-group">
+            <label>Correo Electrónico</label>
+            <input type="email" id="f-email" placeholder="ejemplo@futbol.com">
+        </div>
+        <button id="btn-forgot" type="button" onclick="requestPasswordReset()">Enviar Código</button>
+        <button type="button" class="btn-secondary" onclick="switchView('view-login')">Cancelar</button>
+    </div>
+
+    <!-- 5. VISTA: CAMBIAR CONTRASEÑA (NUEVO) -->
+    <div id="view-reset" class="hidden">
+        <h2>Nueva Táctica</h2>
+        <div class="subtitle">Ingresa el código que recibiste y tu nueva contraseña segura.</div>
+        <div class="input-group">
+            <label>Código de Recuperación</label>
+            <input type="text" id="r-code" class="code-input" placeholder="000000" maxlength="6" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+        <div class="input-group">
+            <label>Nueva Contraseña</label>
+            <input type="password" id="r-pass" placeholder="Mínimo 8 caracteres...">
+        </div>
+        <button id="btn-reset" type="button" onclick="resetPassword()">Cambiar Contraseña</button>
+        <button type="button" class="btn-secondary" onclick="switchView('view-login')">Cancelar</button>
+    </div>
+
+    <!-- 6. VISTA: SELECCIÓN DE EQUIPO -->
+    <div id="view-team-select" class="hidden">
+        <h2>¿De qué club eres hincha?</h2>
+        <div class="input-group search-bar">
+            <input type="text" id="team-search" placeholder="🔍 Buscar equipo..." oninput="filterTeams(this.value)">
+        </div>
+        <div class="teams-grid" id="teams-container"></div>
+        <button id="btn-save-team" type="button" onclick="saveFavoriteTeam()" disabled>Guardar Pasión</button>
+        <button type="button" class="btn-secondary" onclick="logout()">Abandonar Selección (Cerrar Sesión)</button>
+    </div>
+
+    <!-- 7. VISTA: DASHBOARD -->
+    <div id="view-dashboard" class="hidden">
+        <h2>Tu Carnet de Socio</h2>
+        <div class="profile-box">
+            <img id="dash-team-logo" class="team-logo-display hidden" src="" alt="Escudo">
+            <h3 id="dash-team-name" style="color: var(--ball-black); margin-bottom: 1rem; text-transform: uppercase;"></h3>
+
+            <div class="profile-item">
+                <div class="profile-label">Dorsal / Alias</div>
+                <div class="profile-value" id="dash-user">Cargando...</div>
+            </div>
+            <div class="profile-item" style="border:none;">
+                <div class="profile-label">Email de Contacto</div>
+                <div class="profile-value" id="dash-email">Cargando...</div>
+            </div>
+        </div>
+        <button type="button" onclick="logout()" style="background: #fdf2f2; color: var(--error-card); border: 2px solid var(--error-card); box-shadow: 0 4px 0 #f8d7da;">Salir del Vestuario</button>
+    </div>
+
+    <div id="alert"></div>
+</div>
+
+<script>
+    const API = "https://resume-aqlz.onrender.com";
+    let timerUser, timerEmail;
+    let isUserValid = false, isPassValid = false, isMatchValid = false, isEmailValid = false;
+    let selectedTeamObj = null;
+    let currentEmailForVerify = ""; // Guarda el email temporalmente durante el flujo
+    let currentEmailForReset = "";
+
+    const teamsData = [
+        { name: "Real Madrid", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/86.png" },
+        { name: "FC Barcelona", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/83.png" },
+        { name: "Man United", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/360.png" },
+        { name: "Man City", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/382.png" },
+        { name: "Liverpool", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/364.png" },
+        { name: "Bayern Munich", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/132.png" },
+        { name: "PSG", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/160.png" },
+        { name: "Juventus", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/111.png" },
+        { name: "AC Milan", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/104.png" },
+        { name: "Inter Milan", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/110.png" },
+        { name: "Boca Juniors", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/5.png" },
+        { name: "River Plate", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/16.png" },
+        { name: "Club América", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/227.png" },
+        { name: "Chivas", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/218.png" },
+        { name: "Cruz Azul", logo: "https://a.espncdn.com/i/teamlogos/soccer/500/219.png" }
+    ];
+
+    window.onload = () => {
+        const token = localStorage.getItem('jwt_token');
+        if (token) loadDashboard(token);
+        renderTeams(teamsData);
+    };
+
+    function switchView(viewId) {
+        document.querySelectorAll('.card > div[id^="view-"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById(viewId).classList.remove('hidden');
+        hideMsg();
+    }
+
+    /* --- Lógica de Equipos --- */
+    function renderTeams(teams) {
+        const container = document.getElementById('teams-container');
+        container.innerHTML = '';
+        teams.forEach(team => {
+            const div = document.createElement('div');
+            div.className = `team-card ${selectedTeamObj && selectedTeamObj.name === team.name ? 'selected' : ''}`;
+            div.onclick = () => selectTeam(team);
+            div.innerHTML = `<img src="${team.logo}" alt="${team.name}"><span>${team.name}</span>`;
+            container.appendChild(div);
+        });
+    }
+
+    function filterTeams(query) {
+        const q = query.toLowerCase();
+        const filtered = teamsData.filter(t => t.name.toLowerCase().includes(q));
+        renderTeams(filtered);
+    }
+
+    function selectTeam(team) {
+        selectedTeamObj = team;
+        document.getElementById('btn-save-team').disabled = false;
+        renderTeams(teamsData);
+    }
+
+    async function saveFavoriteTeam() {
+        if(!selectedTeamObj) return;
+        shield(true);
+        const token = localStorage.getItem('jwt_token');
+        try {
+            const r = await fetch(`${API}/perfil/equipo?token=${token}`, { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ team_name: selectedTeamObj.name }) });
+            if(r.ok) { showMsg("¡Escudo guardado!", "success"); loadDashboard(token); }
+            else { showMsg("Error al guardar equipo", "error"); }
+        } catch(e) { console.error(e); } finally { shield(false); }
+    }
+
+    /* --- Utilidades --- */
+    function shield(active) {
+        if(active) document.getElementById('glass-shield').classList.remove('hidden');
+        else document.getElementById('glass-shield').classList.add('hidden');
+    }
+
+    function showMsg(t, type) {
+        const a = document.getElementById('alert'); a.innerText = t;
+        a.className = type === 'success' ? 'success-box' : 'error-box'; a.style.display = 'block';
+    }
+    function hideMsg() { document.getElementById('alert').style.display = 'none'; }
+
+    /* --- Lógica de Recuperación y Verificación --- */
+    async function verifyEmail() {
+        const code = document.getElementById('v-code').value;
+        if(code.length !== 6) return showMsg("⚠️ El código debe tener 6 dígitos.", "error");
+
+        shield(true);
+        try {
+            const r = await fetch(`${API}/verify`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: currentEmailForVerify, code: code })
+            });
+            const d = await r.json();
+            if(r.ok) {
+                showMsg("⚽ ¡Cuenta verificada! Ya puedes iniciar sesión.", "success");
+                setTimeout(() => { switchView('view-login'); document.getElementById('l-user').value = currentEmailForVerify; }, 2000);
+            } else { showMsg("🟥 " + (d.detail || "Error"), "error"); }
+        } catch(e) { showMsg("🔌 Fallo de conexión", "error"); } finally { shield(false); }
+    }
+
+    async function requestPasswordReset() {
+        const email = document.getElementById('f-email').value.trim();
+        if(!email) return showMsg("⚠️ Ingresa tu correo.", "error");
+
+        shield(true);
+        try {
+            const r = await fetch(`${API}/forgot-password`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: email })
+            });
+            // Asumimos éxito por seguridad
+            currentEmailForReset = email;
+            showMsg("⚽ Código enviado (revisa tu terminal)", "success");
+            setTimeout(() => { switchView('view-reset'); document.getElementById('r-code').value = ''; document.getElementById('r-pass').value = '';}, 1500);
+        } catch(e) { showMsg("🔌 Fallo de conexión", "error"); } finally { shield(false); }
+    }
+
+    async function resetPassword() {
+        const code = document.getElementById('r-code').value;
+        const pass = document.getElementById('r-pass').value;
+        if(code.length !== 6 || !pass) return showMsg("⚠️ Rellena todos los campos.", "error");
+
+        shield(true);
+        try {
+            const r = await fetch(`${API}/reset-password`, {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ email: currentEmailForReset, code: code, new_password: pass })
+            });
+            const d = await r.json();
+            if(r.ok) {
+                showMsg("⚽ Contraseña actualizada.", "success");
+                setTimeout(() => { switchView('view-login'); document.getElementById('l-user').value = currentEmailForReset; }, 2000);
+            } else { showMsg("🟥 " + (d.detail || "Error"), "error"); }
+        } catch(e) { showMsg("🔌 Fallo de conexión", "error"); } finally { shield(false); }
+    }
+
+    /* --- Lógica de Registro y Login --- */
+    function checkFormState() { document.getElementById('btn-signup').disabled = !(isUserValid && isPassValid && isMatchValid && isEmailValid); }
+
+    async function liveVerifyEmail(val) {
+        const hint = document.getElementById('e-hint'); const input = document.getElementById('s-email');
+        clearTimeout(timerEmail); const regex = /[^@]+@[^@]+\.[^@]+/;
+        if(!val) { hint.innerText = ""; input.style.borderColor = "var(--border-grey)"; isEmailValid = false; checkFormState(); return; }
+        if(!regex.test(val)) { hint.innerText = "🟥 Formato inválido."; hint.style.color = "var(--error-card)"; input.style.borderColor = "var(--error-card)"; isEmailValid = false; checkFormState(); return; }
+
+        timerEmail = setTimeout(async () => {
+            try {
+                const r = await fetch(`${API}/check-email?email=${encodeURIComponent(val)}`); const d = await r.json();
+                hint.innerText = (d.available ? '⚽ ' : '🟥 ') + d.reason; hint.style.color = d.available ? "var(--success-grass)" : "var(--error-card)"; input.style.borderColor = d.available ? "var(--success-grass)" : "var(--error-card)";
+                isEmailValid = d.available; checkFormState();
+            } catch(e) {}
+        }, 400);
+    }
+
+    async function liveVerify(val) {
+        const hint = document.getElementById('s-hint'); const input = document.getElementById('s-user');
+        clearTimeout(timerUser);
+        if(!val) { hint.innerText = ""; input.style.borderColor = "var(--border-grey)"; isUserValid = false; document.getElementById('s-pass').disabled = true; document.getElementById('s-pass2').disabled = true; checkFormState(); return; }
+
+        timerUser = setTimeout(async () => {
+            try {
+                const r = await fetch(`${API}/check-user/${val}`); const d = await r.json();
+                hint.innerText = (d.available ? '⚽ ' : '🟥 ') + d.reason; hint.style.color = d.available ? "var(--success-grass)" : "var(--error-card)"; input.style.borderColor = d.available ? "var(--success-grass)" : "var(--error-card)";
+                isUserValid = d.available; document.getElementById('s-pass').disabled = !d.available; document.getElementById('s-pass2').disabled = !d.available; checkFormState();
+            } catch(e) {}
+        }, 400);
+    }
+
+    function validatePasswordLive() {
+        const pass = document.getElementById('s-pass').value; const hint = document.getElementById('pass-hint'); const input = document.getElementById('s-pass');
+        const regex = /^(?=.*[A-Za-z])(?=.*\d).{8,}$/;
+        if (!pass) { hint.innerText = ""; input.style.borderColor = "var(--border-grey)"; isPassValid = false; }
+        else if (!regex.test(pass)) { hint.innerText = "🟥 Mín 8 chars, letras y números."; hint.style.color = "var(--error-card)"; input.style.borderColor = "var(--error-card)"; isPassValid = false; }
+        else { hint.innerText = "⚽ Contraseña segura."; hint.style.color = "var(--success-grass)"; input.style.borderColor = "var(--success-grass)"; isPassValid = true; }
+        validateMatchLive(); checkFormState();
+    }
+
+    function validateMatchLive() {
+        const pass = document.getElementById('s-pass').value; const pass2 = document.getElementById('s-pass2').value; const hint = document.getElementById('match-hint'); const input = document.getElementById('s-pass2');
+        if (!pass2) { hint.innerText = ""; input.style.borderColor = "var(--border-grey)"; isMatchValid = false; }
+        else if (pass !== pass2) { hint.innerText = "🟥 No coincide."; hint.style.color = "var(--error-card)"; input.style.borderColor = "var(--error-card)"; isMatchValid = false; }
+        else { hint.innerText = "⚽ Pase perfecto."; hint.style.color = "var(--success-grass)"; input.style.borderColor = "var(--success-grass)"; isMatchValid = true; }
+        checkFormState();
+    }
+
+    function resetSignupForm() {
+        document.getElementById('s-email').value = ''; document.getElementById('s-user').value = ''; document.getElementById('s-pass').value = ''; document.getElementById('s-pass2').value = '';
+        ['s-hint','e-hint','pass-hint','match-hint'].forEach(id => document.getElementById(id).innerText = '');
+        ['s-user','s-email','s-pass','s-pass2'].forEach(id => document.getElementById(id).style.borderColor = 'var(--border-grey)');
+        isUserValid = false; isPassValid = false; isMatchValid = false; isEmailValid = false;
+        document.getElementById('s-pass').disabled = true; document.getElementById('s-pass2').disabled = true; checkFormState();
+    }
+
+    async function auth(mode) {
+        hideMsg();
+        let payload = {};
+        const btn = mode === 'login' ? document.getElementById('btn-login') : document.getElementById('btn-signup');
+
+        if (mode === 'login') {
+            const user = document.getElementById('l-user').value.trim(); const pass = document.getElementById('l-pass').value;
+            if(!user || !pass) return showMsg("⚠️ Rellena la táctica", "error");
+            payload = { username: user, password: pass };
+        } else {
+            const email = document.getElementById('s-email').value.trim(); const user = document.getElementById('s-user').value.trim(); const pass = document.getElementById('s-pass').value;
+            payload = { username: user, email: email, password: pass };
+            currentEmailForVerify = email; // Guardar para la pantalla de verificación
+        }
+
+        shield(true); btn.disabled = true;
+        try {
+            const r = await fetch(`${API}/${mode}`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            const d = await r.json();
+
+            if(r.ok) {
+                if(mode === 'login') {
+                    localStorage.setItem('jwt_token', d.access_token); document.getElementById('l-pass').value = ''; loadDashboard(d.access_token);
+                    shield(false); btn.disabled = false;
+                } else {
+                    showMsg("🏆 ¡Contrato firmado! Revisa tu terminal.", "success");
+                    setTimeout(() => {
+                        switchView('view-verify');
+                        document.getElementById('verify-email-display').innerText = currentEmailForVerify;
+                        document.getElementById('v-code').value = '';
+                        resetSignupForm();
+                        shield(false); btn.disabled = false;
+                    }, 1800);
+                }
+            } else {
+                showMsg("🟥 " + (d.detail || "Error"), "error");
+                shield(false); btn.disabled = false;
+            }
+        } catch(e) { showMsg("🔌 Fallo de conexión", "error"); shield(false); btn.disabled = false; }
+    }
+
+    async function loadDashboard(token) {
+        try {
+            const r = await fetch(`${API}/perfil?token=${token}`);
+            const d = await r.json();
+            if (r.ok) {
+                if (!d.favorite_team) { switchView('view-team-select'); }
+                else {
+                    switchView('view-dashboard');
+                    document.getElementById('dash-user').innerText = "@" + d.username; document.getElementById('dash-email').innerText = d.email;
+                    const teamData = teamsData.find(t => t.name === d.favorite_team);
+                    if(teamData) {
+                        const logoImg = document.getElementById('dash-team-logo');
+                        logoImg.src = teamData.logo; logoImg.classList.remove('hidden');
+                        document.getElementById('dash-team-name').innerText = "Hincha de " + d.favorite_team;
+                    }
+                }
+            } else { logout(); }
+        } catch(e) { logout(); }
+    }
+
+    function logout() { localStorage.removeItem('jwt_token'); switchView('view-login'); selectedTeamObj = null; }
+</script>
+</body>
+</html>
